@@ -19,6 +19,10 @@ public class MainActivity extends AppCompatActivity {
 
         ViewGroup mapViewContainer = (ViewGroup) findViewById(R.id.map_view);
         mapViewContainer.addView(mapView);
+
+        mapView.setZoomLevel(4, true);
+
+        mapView.setCurrentLocationTrackingMode(MapView.CurrentLocationTrackingMode.TrackingModeOnWithoutHeading);
     }
 
 }
