@@ -8,8 +8,10 @@
 
     <Button
         android:id="@+id/button"
-        android:layout_width="384dp"
+        android:layout_width="392dp"
         android:layout_height="0dp"
+        android:layout_marginStart="10dp"
+        android:layout_marginEnd="10dp"
         android:layout_marginBottom="16dp"
         android:text="길 찾기 시작!"
         app:layout_constraintBottom_toBottomOf="parent"
@@ -19,7 +21,7 @@
 
     <Button
         android:id="@+id/button6"
-        android:layout_width="wrap_content"
+        android:layout_width="92dp"
         android:layout_height="wrap_content"
         android:layout_marginStart="160dp"
         android:layout_marginTop="20dp"
@@ -28,9 +30,9 @@
         android:text="검색"
         app:layout_constraintBottom_toTopOf="@+id/button"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.0"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/editTextTextPersonName2" />
+        app:layout_constraintTop_toBottomOf="@+id/editTextTextPersonName2"
+        app:layout_constraintVertical_bias="1.0" />
 
     <EditText
         android:id="@+id/editTextTextPersonName"
@@ -64,7 +66,7 @@
 
     <Button
         android:id="@+id/button7"
-        android:layout_width="wrap_content"
+        android:layout_width="92dp"
         android:layout_height="wrap_content"
         android:layout_marginStart="160dp"
         android:layout_marginTop="20dp"
