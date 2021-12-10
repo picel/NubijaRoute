@@ -15,9 +15,7 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.NubijaRoute"
         android:usesCleartextTraffic="true">
-        <activity
-            android:name=".Search"
-            android:exported="false" />
+        <activity android:name=".Result"/>
         <activity
             android:name=".MainActivity"
             android:exported="true"

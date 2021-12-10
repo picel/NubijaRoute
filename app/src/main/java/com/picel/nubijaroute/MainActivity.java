@@ -1,14 +1,24 @@
 package com.picel.nubijaroute;
 
 import android.Manifest;
+import android.app.Service;
+import android.content.Context;
 import android.content.Intent;
+import android.content.pm.PackageManager;
+import android.location.Location;
+import android.location.LocationListener;
+import android.location.LocationManager;
 import android.os.Bundle;
+import android.os.IBinder;
+import android.util.Log;
 import android.view.ViewGroup;
 import android.widget.Button;
+import android.widget.Toast;
 
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.content.ContextCompat;
 
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
@@ -28,6 +38,8 @@ import java.util.ArrayList;
 
 public class MainActivity extends AppCompatActivity {
     Button btnOpenSearch;
+    String BASE_URL = "https://dapi.kakao.com/";
+    String API_KEY = "7cfac32a296f5a75f19396b68f167a94";
     public MainActivity() throws IOException {
     }
 
@@ -35,12 +47,6 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-
-        FloatingActionButton fab = findViewById(R.id.fab_search);
-        fab.setOnClickListener((v) -> {
-            Intent intent = new Intent(MainActivity.this, Search.class);
-            startActivity(intent);
-        });
 
         ActivityResultLauncher<String[]> locationPermissionRequest =
                 registerForActivityResult(new ActivityResultContracts
@@ -63,6 +69,10 @@ public class MainActivity extends AppCompatActivity {
                 Manifest.permission.ACCESS_COARSE_LOCATION
         });
 
+        GpsTracker gpsTracker = new GpsTracker(MainActivity.this);
+        double currentlatitude = gpsTracker.getLatitude();
+        double currentlongitude = gpsTracker.getLongitude();
+
         MapView mapView = new MapView(this);
 
         ViewGroup mapViewContainer = (ViewGroup) findViewById(R.id.map_view);
@@ -75,14 +85,49 @@ public class MainActivity extends AppCompatActivity {
         LocationApi apiData = new LocationApi();
         ArrayList<location> dataArr = apiData.getData();
 
+        double min = 1.0;
+        double tmp1, tmp2, tmpsum, minLat = 0, minLong = 0;
+        String minName = "";
+
         ArrayList<MapPOIItem> markerArr = new ArrayList<MapPOIItem>();
         for (location data : dataArr) {
             MapPOIItem marker = new MapPOIItem();
-            marker.setMapPoint(MapPoint.mapPointWithGeoCoord(data.getLatitude(), data.getLongitude()));
-            marker.setItemName(data.getName());
+            double tmpLatitude = data.getLatitude();
+            double tmpLongitude = data.getLongitude();
+            String tmpname = data.getName();
+            marker.setMapPoint(MapPoint.mapPointWithGeoCoord(tmpLatitude, tmpLongitude));
+            tmp1 = tmpLatitude - currentlatitude;
+            tmp2 = tmpLongitude - currentlongitude;
+            tmpsum = Math.pow(tmp1, 2) + Math.pow(tmp2, 2);
+
+            if (min > tmpsum){
+                min = tmpsum;
+                minName = tmpname;
+                minLat = tmpLatitude;
+                minLong = tmpLongitude;
+            }
+
+            marker.setItemName(tmpname);
             markerArr.add(marker);
         }
         mapView.addPOIItems(markerArr.toArray(new MapPOIItem[markerArr.size()]));
+
+        FloatingActionButton fab = findViewById(R.id.fab_search);
+        String finalMinName = minName;
+        double finalMinLat = minLat;
+        double finalMinLong = minLong;
+        fab.setOnClickListener((v) -> {
+            Intent intent = new Intent(MainActivity.this, Result.class);
+            intent.putExtra("key01", finalMinName);
+            intent.putExtra("destLat", finalMinLat);
+            intent.putExtra("destLong", finalMinLong);
+            intent.putExtra("curLat", currentlatitude);
+            intent.putExtra("curLong", currentlongitude);
+            startActivity(intent);
+        });
+
+        Toast toast = Toast.makeText(this.getApplicationContext(), "가장 가까운 정류장" + minName + "입니다.", Toast.LENGTH_LONG);
+        toast.show();
     }
 }
 
@@ -123,6 +168,10 @@ class location {
                 ", longitude=" + longitude +
                 '}';
     }
+}
+
+class ResultSearchKeyword{
+
 }
 
 class LocationApi {
@@ -220,3 +269,100 @@ class LocationApi {
         return dataArr;
     }
 }
+
+class GpsTracker extends Service implements LocationListener {
+    private final Context mContext;
+    Location location;
+    double latitude;
+    double longitude;
+    private static final long MIN_DISTANCE_CHANGE_FOR_UPDATES = 10;
+    private static final long MIN_TIME_BW_UPDATES = 1000 * 60;
+    protected LocationManager locationManager;
+
+    public GpsTracker(Context context) {
+        this.mContext = context;
+        getLocation();
+    }
+
+    public Location getLocation() {
+        try {
+            locationManager = (LocationManager) mContext.getSystemService(LOCATION_SERVICE);
+            boolean isGPSEnabled = locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER);
+            boolean isNetworkEnabled = locationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER);
+            if (!isGPSEnabled && !isNetworkEnabled) {
+            } else {
+                int hasFineLocationPermission = ContextCompat.checkSelfPermission(mContext, Manifest.permission.ACCESS_FINE_LOCATION);
+                int hasCoarseLocationPermission = ContextCompat.checkSelfPermission(mContext, Manifest.permission.ACCESS_COARSE_LOCATION);
+                if (hasFineLocationPermission == PackageManager.PERMISSION_GRANTED && hasCoarseLocationPermission == PackageManager.PERMISSION_GRANTED) {
+                } else return null;
+                if (isNetworkEnabled) {
+                    locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, MIN_TIME_BW_UPDATES, MIN_DISTANCE_CHANGE_FOR_UPDATES, this);
+                    if (locationManager != null) {
+                        location = locationManager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
+                        if (location != null) {
+                            latitude = location.getLatitude();
+                            longitude = location.getLongitude();
+                        }
+                    }
+                }
+                if (isGPSEnabled) {
+                    if (location == null) {
+                        locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, MIN_TIME_BW_UPDATES, MIN_DISTANCE_CHANGE_FOR_UPDATES, this);
+                        if (locationManager != null) {
+                            location = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
+                            if (location != null) {
+                                latitude = location.getLatitude();
+                                longitude = location.getLongitude();
+                            }
+                        }
+                    }
+                }
+            }
+        } catch (Exception e) {
+            Log.d("@@@", "" + e.toString());
+        }
+        return location;
+    }
+
+    public double getLatitude() {
+        if (location != null) {
+            latitude = location.getLatitude();
+        }
+        return latitude;
+    }
+
+    public double getLongitude() {
+        if (location != null) {
+            longitude = location.getLongitude();
+        }
+        return longitude;
+    }
+
+    @Override
+    public void onLocationChanged(Location location) {
+    }
+
+    @Override
+    public void onProviderDisabled(String provider) {
+    }
+
+    @Override
+    public void onProviderEnabled(String provider) {
+    }
+
+    @Override
+    public void onStatusChanged(String provider, int status, Bundle extras) {
+    }
+
+    @Override
+    public IBinder onBind(Intent arg0) {
+        return null;
+    }
+
+    public void stopUsingGPS() {
+        if (locationManager != null) {
+            locationManager.removeUpdates(GpsTracker.this);
+        }
+    }
+}
+
