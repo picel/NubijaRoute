@@ -4,16 +4,18 @@ import android.Manifest;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
+import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
+import android.content.pm.Signature;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
 import android.os.Bundle;
 import android.os.IBinder;
+import android.util.Base64;
 import android.util.Log;
 import android.view.ViewGroup;
 import android.widget.Button;
-import android.widget.Toast;
 
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
@@ -34,12 +36,11 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 
 public class MainActivity extends AppCompatActivity {
-    Button btnOpenSearch;
-    String BASE_URL = "https://dapi.kakao.com/";
-    String API_KEY = "7cfac32a296f5a75f19396b68f167a94";
     public MainActivity() throws IOException {
     }
 
@@ -125,9 +126,6 @@ public class MainActivity extends AppCompatActivity {
             intent.putExtra("curLong", currentlongitude);
             startActivity(intent);
         });
-
-        Toast toast = Toast.makeText(this.getApplicationContext(), "가장 가까운 정류장" + minName + "입니다.", Toast.LENGTH_LONG);
-        toast.show();
     }
 }
 
